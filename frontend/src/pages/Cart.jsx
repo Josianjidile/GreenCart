@@ -15,6 +15,7 @@ const Cart = () => {
     user,
     axios,
     setCartItems,
+    setShowUserLogin
   } = useAppContext();
 
   const [showAddress, setShowAddress] = useState(false);
@@ -29,7 +30,7 @@ const Cart = () => {
     for (const key in cartItems) {
       const product = products.find((item) => item._id === key);
       if (product) {
-        tempArray.push({ ...product, quantity: cartItems[key] }); // Don't mutate original object
+        tempArray.push({ ...product, quantity: cartItems[key] });
       }
     }
     setCartArray(tempArray);
@@ -106,7 +107,6 @@ const Cart = () => {
         }
         setLoading(false);
       } else {
-        // Stripe order
         setLoading(true);
         const { data } = await axios.post('/api/order/stripe', {
           userId: user._id,
@@ -138,7 +138,7 @@ const Cart = () => {
           Please login to view your cart
         </h1>
         <button
-          onClick={() => navigate('/login')}
+          onClick={() => setShowUserLogin(true)}
           className="px-6 py-2 bg-primary text-white rounded hover:bg-primary-dull transition"
         >
           Login
