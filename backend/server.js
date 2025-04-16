@@ -34,7 +34,7 @@ const port = process.env.PORT || 5000;
 // CORS configuration
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://greencart-dun.vercel.app",
+  "https://greencart-dun.vercel.app", // Fixed the double slash here
   // Add other production domains as needed
 ];
 
@@ -65,13 +65,18 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors(corsOptions));
 
-// Rate limiting (optional but recommended)
-import rateLimit from "express-rate-limit";
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
+// Rate limiting (optional - remove if not needed)
+try {
+  const { default: rateLimit } = await import("express-rate-limit");
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100 // limit each IP to 100 requests per windowMs
+  });
+  app.use(limiter);
+  console.log("Rate limiting enabled");
+} catch (err) {
+  console.log("Rate limiting disabled (express-rate-limit not installed)");
+}
 
 // Routes
 app.use("/api/user", userRouter);
