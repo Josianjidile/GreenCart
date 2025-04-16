@@ -14,11 +14,12 @@ const Login = () => {
         event.preventDefault();
         try {
             setLoading(true);
-            const { data } = await axios.post(`/api/user/${state}`, {
-                name,
-                email,
-                password,
-            });
+            const { data } = await axios.post(
+                `/api/user/${state}`,
+                { name, email, password },
+                { withCredentials: true }
+              );
+              
 
             if (data.success) {
                 // Immediately update user state with the returned data

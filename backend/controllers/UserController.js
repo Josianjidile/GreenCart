@@ -3,12 +3,11 @@ import bcrypt from "bcrypt";
 import validator from "validator";
 import jwt from "jsonwebtoken";
 
-// Helper: Create JWT
-const createToken = (payload, secret, expiresIn) => {
-  return jwt.sign(payload, secret, { expiresIn });
-};
+// 🔐 Helper to create JWT
+const createToken = (payload, secret, expiresIn) =>
+  jwt.sign(payload, secret, { expiresIn });
 
-// ✅ User Registration
+// ✅ Register New User
 export const userRegister = async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -22,7 +21,9 @@ export const userRegister = async (req, res) => {
     }
 
     if (password.length < 8) {
-      return res.status(400).json({ message: "Password must be at least 8 characters long" });
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 8 characters long" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -31,25 +32,25 @@ export const userRegister = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      name,
-      email,
-      password: hashedPassword,
-    });
-
+    const user = new User({ name, email, password: hashedPassword });
     await user.save();
 
-    const token = createToken({ userId: user._id }, process.env.JWT_SECRET, "7d");
+    const token = createToken(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      "7d"
+    );
 
+    // Set cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     return res.status(201).json({
+      success: true,
       token,
       message: "User registered successfully",
       user: { email: user.email, name: user.name },
@@ -60,13 +61,15 @@ export const userRegister = async (req, res) => {
   }
 };
 
-// ✅ User Login
+// ✅ Login User
 export const userLogin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
+  try {
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
+      return res
+        .status(400)
+        .json({ message: "Email and password are required" });
     }
 
     const user = await User.findOne({ email });
@@ -79,12 +82,16 @@ export const userLogin = async (req, res) => {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
-    const token = createToken({ userId: user._id }, process.env.JWT_SECRET, "7d");
+    const token = createToken(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      "7d"
+    );
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -106,35 +113,43 @@ export const isAuth = async (req, res) => {
     const token = req.cookies.token;
 
     if (!token) {
-      return res.status(401).json({ success: false, message: "Not authenticated" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Access Denied: No token provided" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select("-password");
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     return res.json({ success: true, user });
   } catch (error) {
     console.error("Auth check error:", error.message);
-    return res.status(500).json({ success: false, message: "Auth check failed" });
+    return res
+      .status(401)
+      .json({ success: false, message: "Invalid or expired token" });
   }
 };
 
-// ✅ Logout
+// ✅ Logout User
 export const userLogout = async (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
 
-    return res.json({ success: true, message: "User logged out successfully" });
+    return res.json({ success: true, message: "Logged out successfully" });
   } catch (error) {
     console.error("Logout error:", error.message);
-    return res.status(500).json({ success: false, message: "Server error during logout" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error during logout" });
   }
 };
