@@ -51,10 +51,11 @@ export const userRegister = async (req, res) => {
     // Set token as an HTTP-only cookie
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Ensure this is set correctly
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // Token expires after 7 days
+      secure: process.env.NODE_ENV === "production", // ✔️ Use HTTPS only in production
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict", // ✔️ Required for cross-origin
+      maxAge: 7 * 24 * 60 * 60 * 1000, // ✔️ 7 days
     });
+    
 
     res.status(201).json({
       token,
@@ -95,10 +96,11 @@ export const userLogin = async (req, res) => {
     // Set token as an HTTP-only cookie
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Ensure this is set correctly
+      secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // Token expires after 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+    
 
     return res.json({success:true,
       token,
