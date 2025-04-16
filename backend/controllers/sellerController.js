@@ -21,12 +21,14 @@ export const sellerLogin = async (req, res) => {
       });
 
       // Set cookie
-      res.cookie("sellerToken", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+// In both login and register endpoints, update cookie settings:
+res.cookie("sellerToken", token, {
+  httpOnly: true,
+  secure: true, // Force secure in production
+  sameSite: "none", // Required for cross-site cookies
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  domain: ".vercel.app" // Allow subdomains to access the cookie
+});
 
       return res.json({ 
         success: true, 

@@ -41,13 +41,14 @@ export const userRegister = async (req, res) => {
       "7d"
     );
 
-    // Set cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+  // In both login and register endpoints, update cookie settings:
+res.cookie("token", token, {
+  httpOnly: true,
+  secure: true, // Force secure in production
+  sameSite: "none", // Required for cross-site cookies
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  domain: ".vercel.app" // Allow subdomains to access the cookie
+});
 
     return res.status(201).json({
       success: true,
@@ -88,12 +89,14 @@ export const userLogin = async (req, res) => {
       "7d"
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+   // In both login and register endpoints, update cookie settings:
+res.cookie("token", token, {
+  httpOnly: true,
+  secure: true, // Force secure in production
+  sameSite: "none", // Required for cross-site cookies
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  domain: ".vercel.app" // Allow subdomains to access the cookie
+});
 
     return res.json({
       success: true,
@@ -110,29 +113,37 @@ export const userLogin = async (req, res) => {
 // ✅ Check if Authenticated
 export const isAuth = async (req, res) => {
   try {
-    const token = req.cookies.token;
-
+    // Check both cookies and authorization header
+    const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+    
     if (!token) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Access Denied: No token provided" });
+      return res.status(401).json({ 
+        success: false, 
+        message: "Access Denied: No token provided" 
+      });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select("-password");
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found" 
+      });
     }
 
-    return res.json({ success: true, user });
+    return res.json({ 
+      success: true, 
+      user,
+      token // Return the token in response as fallback
+    });
   } catch (error) {
     console.error("Auth check error:", error.message);
-    return res
-      .status(401)
-      .json({ success: false, message: "Invalid or expired token" });
+    return res.status(401).json({ 
+      success: false, 
+      message: "Invalid or expired token" 
+    });
   }
 };
 
